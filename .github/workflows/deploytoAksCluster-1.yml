@@ -1,0 +1,50 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: dachkspan.azurecr.io
+        username: ${{ secrets.acr_dachkspan_username }}
+        password: ${{ secrets.acr_dachkspan_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/" -f  "Dockerfile" -t dachkspan.azurecr.io/dachaks:${{ github.sha }} --label dockerfile-path=Dockerfile
+        docker push dachkspan.azurecr.io/dachaks:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_dachaks_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep dachaks82e7 | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace dachaks82e7`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: dachaks82e7
+        container-registry-url: dachkspan.azurecr.io
+        container-registry-username: ${{ secrets.acr_dachkspan_username }}
+        container-registry-password: ${{ secrets.acr_dachkspan_password }}
+        secret-name: dachaksdockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: dachaks82e7
+        manifests: |
+          manifests/deployment-1.yml
+          manifests/service-1.yml
+        images: |
+          dachkspan.azurecr.io/dachaks:${{ github.sha }}
+        imagepullsecrets: |
+          dachaksdockerauth
