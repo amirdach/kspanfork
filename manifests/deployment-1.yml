@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "dachaks-b303"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "dachaks-b303"
+  template:
+    metadata:
+      labels:
+        app: "dachaks-b303"
+    spec:
+      containers:
+        - name: "dachaks-b303"
+          image: "dachkspan.azurecr.io/dachaks"
+          ports:
+          - containerPort: 80
