@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "dachaks-624e"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "dachaks-624e"
+  template:
+    metadata:
+      labels:
+        app: "dachaks-624e"
+    spec:
+      containers:
+        - name: "dachaks-624e"
+          image: "dachkspan.azurecr.io/dachaks"
+          ports:
+          - containerPort: 80
